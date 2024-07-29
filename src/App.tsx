@@ -1,7 +1,8 @@
 import Editor from '@monaco-editor/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import CodeInterface from './container/CodeInterface';
+import { io } from "socket.io-client";
 
 interface File {
   name: string;
@@ -10,10 +11,10 @@ interface File {
 }
 
 const files: { [key: string]: File } = {
-  "script.py": {
-    name: "script.py",
-    language: "python",
-    value: "// Write code here",
+  "script.js": {
+    name: "script.js",
+    language: "javascript",
+    value: "console.log('hello world')",
   },
   "index.html": {
     name: "index.html",
@@ -23,7 +24,32 @@ const files: { [key: string]: File } = {
 };
 
 function App() {
-  const [fileName, setFileName] = useState<string>("script.py");
+  const socket = useMemo(
+    () =>
+      io("http://localhost:4000", {
+        withCredentials: true,
+      }),
+    []
+  );
+
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("connected", socket.id);
+    })
+
+    return () => {
+      socket.disconnect();
+    };
+  }, 
+  
+  [])
+
+
+
+
+
+  const [fileName, setFileName] = useState<string>("script.js");
   const file: File = files[fileName];
 
   return (
