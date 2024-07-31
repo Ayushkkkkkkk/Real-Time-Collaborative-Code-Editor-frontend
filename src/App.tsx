@@ -14,7 +14,7 @@ const files: { [key: string]: File } = {
   "script.js": {
     name: "script.js",
     language: "javascript",
-    value: "console.log('hello world')",
+    value: "console.log('hello world fuckers fuck')",
   },
   "index.html": {
     name: "index.html",
@@ -41,9 +41,9 @@ function App() {
     return () => {
       socket.disconnect();
     };
-  }, 
-  
-  [])
+  },
+
+    [])
 
 
 
