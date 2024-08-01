@@ -1,28 +1,14 @@
 import Editor from '@monaco-editor/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
-import CodeInterface from './container/CodeInterface';
 import { io } from 'socket.io-client';
-import { initVimMode } from 'monaco-vim'; // Import monaco-vim
+import { initVimMode } from 'monaco-vim';
 
 interface File {
   name: string;
   language: string;
   value: string;
 }
-
-const files: { [key: string]: File } = {
-  "script.js": {
-    name: "script.js",
-    language: "javascript",
-    value: "console.log('hello world')",
-  },
-  "index.html": {
-    name: "index.html",
-    language: "html",
-    value: "<div>hello world</div>",
-  },
-};
 
 function App() {
   const socket = useMemo(
@@ -33,12 +19,13 @@ function App() {
     []
   );
 
+  const [files, setFiles] = useState<{ [key: string]: File }>({});
+  const [newFileName, setNewFileName] = useState("");
+  const [editorValue, setEditorValue] = useState<string>("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [output, setOutput] = useState<string>("");
   const editorRef = useRef<any>(null);
-  const vimModeRef = useRef<any>(null); // Reference for Vim mode
-  const [editorValue, setEditorValue] = useState<string>(files["script.js"].value);
-  const [fileName, setFileName] = useState<string>("script.js");
-  const [output, setOutput] = useState<string>(""); // State for output
-  const file: File = files[fileName];
+  const vimModeRef = useRef<any>(null);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -58,8 +45,6 @@ function App() {
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
-
-    // Initialize Vim mode
     const statusNode = document.createElement('div');
     document.body.appendChild(statusNode);
     vimModeRef.current = initVimMode(editor, statusNode);
@@ -68,7 +53,9 @@ function App() {
   const handleEditorChange = (value: string | undefined) => {
     if (value) {
       setEditorValue(value);
-      socket.emit("editor-message", value); // Emit editor content to server
+      if (fileName) {
+        socket.emit("editor-message", value);
+      }
     }
   };
 
@@ -78,13 +65,13 @@ function App() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': '947263138emsh6395daaef83aab5p1d2114jsn5fe463414cf3', // Add your API key here
+          'x-api-key': '947263138emsh6395daaef83aab5p1d2114jsn5fe463414cf3',
         },
         body: JSON.stringify({
           source_code: editorValue,
-          language_id: 63, // JavaScript (Node.js)
-          stdin: "", // You can pass input if needed
-          expected_output: "", // If you have an expected output to match against
+          language_id: 63,
+          stdin: "",
+          expected_output: "",
         }),
       });
 
@@ -100,25 +87,77 @@ function App() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFileName(e.target.value);
+  }
+
+  const handleAddFile = () => {
+    if (newFileName.trim()) {
+      const fileExtension = newFileName.split('.').pop() || '';
+      const language = fileExtension === 'js' ? 'javascript' : fileExtension === 'html' ? 'html' : 'plaintext';
+
+      const newFile: File = {
+        name: newFileName,
+        language,
+        value: "",
+      };
+
+      setFiles(prevFiles => ({ ...prevFiles, [newFileName]: newFile }));
+      setFileName(newFileName);
+      setEditorValue("");
+      setNewFileName("");
+    }
+  }
+
+  const handleFileChange = (name: string) => {
+    if (files[name]) {
+      setFileName(name);
+      setEditorValue(files[name].value);
+    }
+  }
+
   return (
     <div className="app">
-      <CodeInterface files={files} currentFileName={fileName} setFileName={setFileName} />
+      <div className="file-interface">
+        {Object.keys(files).length > 0 && fileName && (
+          <select onChange={(e) => handleFileChange(e.target.value)} value={fileName}>
+            {Object.keys(files).map(file => (
+              <option key={file} value={file}>{file}</option>
+            ))}
+          </select>
+        )}
+        <div className="add-file-container">
+          <input
+            type='text'
+            placeholder='Enter file name'
+            value={newFileName}
+            onChange={handleInputChange}
+          />
+          <button onClick={handleAddFile}>Add File</button>
+        </div>
+      </div>
       <div className="editor-container">
-        <Editor
-          height="80vh"
-          width="100%"
-          language={file.language}
-          value={editorValue}
-          path={file.name}
-          theme="vs-dark"
-          onChange={handleEditorChange}
-          onMount={handleEditorDidMount}
-        />
+        {fileName ? (
+          <Editor
+            height="calc(100vh - 150px)"
+            width="100%"
+            language={files[fileName]?.language || 'plaintext'}
+            value={editorValue}
+            path={fileName}
+            theme="vs-dark"
+            onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
+          />
+        ) : (
+          <p className="placeholder">No file selected. Please create or select a file.</p>
+        )}
       </div>
-      <div className="output-container">
-        <button onClick={handleRunCode}>Run</button>
-        <pre className="output">{output}</pre>
-      </div>
+      {fileName && (
+        <div className="output-container">
+          <button onClick={handleRunCode}>Run</button>
+          <pre className="output">{output}</pre>
+        </div>
+      )}
     </div>
   );
 }
