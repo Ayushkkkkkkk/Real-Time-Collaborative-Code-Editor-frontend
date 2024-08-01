@@ -77,20 +77,25 @@ function App() {
       const response = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-api-key': '947263138emsh6395daaef83aab5p1d2114jsn5fe463414cf3', // Add your API key here
         },
         body: JSON.stringify({
           source_code: editorValue,
-          language_id: 63, // Assuming JavaScript; map languages as needed
+          language_id: 63, // JavaScript (Node.js)
           stdin: "", // You can pass input if needed
-          expected_output: "" // If you have an expected output to match against
-        })
+          expected_output: "", // If you have an expected output to match against
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
+      }
 
       const result = await response.json();
       setOutput(result.stdout || result.stderr || "No output");
     } catch (error) {
-      console.log(error);
+      console.error("Error:", error);
       setOutput("An error occurred while executing the code.");
     }
   };
