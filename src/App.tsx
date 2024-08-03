@@ -1,9 +1,8 @@
+import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
-import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
 import './App.css';
+import { io } from 'socket.io-client';
 
 interface File {
   name: string;
@@ -11,46 +10,14 @@ interface File {
   value: string;
 }
 
-function App() {
-  const socket = useMemo(
-    () =>
-      io("http://localhost:4000", {
-        withCredentials: true,
-      }),
-    []
-  );
-
+const App: React.FC = () => {
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [files, setFiles] = useState<{ [key: string]: File }>({});
-  const [newFileName, setNewFileName] = useState("");
-  const [editorValue, setEditorValue] = useState<string>("");
+  const [newFileName, setNewFileName] = useState<string>('');
+  const [editorValue, setEditorValue] = useState<string>('');
   const [fileName, setFileName] = useState<string | null>(null);
-  const [output, setOutput] = useState<string>("");
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const editorRef = useRef<any>(null);
-  const vimModeRef = useRef<any>(null);
-
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("connected", socket.id);
-    });
-
-    socket.on("editor-message", (data: string) => {
-      console.log('Received message from server:', data);
-      setEditorValue(data);
-    });
-
-    return () => {
-      socket.disconnect();
-      socket.off("editor-message");
-    };
-  }, [socket]);
-
-  const handleEditorDidMount = (editor: any) => {
-    editorRef.current = editor;
-    const statusNode = document.createElement('div');
-    document.body.appendChild(statusNode);
-    vimModeRef.current = initVimMode(editor, statusNode);
-  };
+  const [output, setOutput] = useState<string>('');
+  const socket = io("http://localhost:4000", { withCredentials: true });
 
   const handleEditorChange = (value: string | undefined) => {
     if (value) {
@@ -89,10 +56,6 @@ function App() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewFileName(e.target.value);
-  };
-
   const handleAddFile = () => {
     if (newFileName.trim()) {
       const fileExtension = newFileName.split('.').pop() || '';
@@ -122,6 +85,10 @@ function App() {
     setIsChatOpen(!isChatOpen);
   };
 
+  const closeChat = () => {
+    setIsChatOpen(false);
+  };
+
   return (
     <div className="app">
       <div className="file-interface">
@@ -137,7 +104,7 @@ function App() {
             type='text'
             placeholder='Enter file name'
             value={newFileName}
-            onChange={handleInputChange}
+            onChange={(e) => setNewFileName(e.target.value)}
           />
           <button onClick={handleAddFile}>Add File</button>
         </div>
@@ -152,7 +119,6 @@ function App() {
             path={fileName}
             theme="vs-dark"
             onChange={handleEditorChange}
-            onMount={handleEditorDidMount}
           />
         ) : (
           <p className="placeholder">No file selected. Please create or select a file.</p>
@@ -164,13 +130,13 @@ function App() {
           <pre className="output">{output}</pre>
         </div>
       )}
-      {isChatOpen && <ChatBox />}
       <button className="chat-toggle-btn" onClick={toggleChat}>
         {isChatOpen ? 'Close Chat' : 'Open Chat'}
       </button>
+      {isChatOpen && <ChatBox onClose={closeChat} />}
     </div>
   );
-}
+};
 
 export default App;
 

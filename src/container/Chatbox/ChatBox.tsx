@@ -1,24 +1,27 @@
 import React from 'react';
-import './ChatBox.css';
+import './ChatBox.css'; // Assuming CSS is in the same folder
 
-const ChatBox = () => {
+interface ChatBoxProps {
+  onClose: () => void;  // Type the onClose function prop correctly
+}
+
+const ChatBox: React.FC<ChatBoxProps> = ({ onClose }) => {
   return (
     <div className="chatbox-container">
       <div className="chatbox-header">
-        <h2>Chat</h2>
+        Chat
+        <button className="chatbox-close-btn" onClick={onClose}>×</button>
       </div>
       <div className="chatbox-messages">
-        {/* Example messages */}
-        <div className="message received">Hello! How can I help you today?</div>
-        <div className="message sent">Hi! I have a question about my order.</div>
+        {/* Render messages here */}
       </div>
       <div className="chatbox-input">
-        <input type="text" placeholder="Type a message..." />
+        <input type="text" placeholder="Type a message" />
         <button>Send</button>
       </div>
     </div>
   );
-};
+}
 
 export default ChatBox;
 
