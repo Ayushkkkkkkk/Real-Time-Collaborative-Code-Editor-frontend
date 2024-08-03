@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
-import ChatBox from './container/Chatbox/ChatBox';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import { io } from 'socket.io-client';
+import { initVimMode } from 'monaco-vim';
+import ChatBox from './container/Chatbox/ChatBox';
 
 interface File {
   name: string;
@@ -10,14 +11,57 @@ interface File {
   value: string;
 }
 
-const App: React.FC = () => {
-  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+function App() {
+  const socket = useMemo(
+    () =>
+      io("http://localhost:4000", {
+        withCredentials: true,
+      }),
+    []
+  );
+
   const [files, setFiles] = useState<{ [key: string]: File }>({});
-  const [newFileName, setNewFileName] = useState<string>('');
-  const [editorValue, setEditorValue] = useState<string>('');
+  const [newFileName, setNewFileName] = useState("");
+  const [editorValue, setEditorValue] = useState<string>("");
   const [fileName, setFileName] = useState<string | null>(null);
-  const [output, setOutput] = useState<string>('');
-  const socket = io("http://localhost:4000", { withCredentials: true });
+  const [output, setOutput] = useState<string>("");
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const editorRef = useRef<any>(null);
+  const vimModeRef = useRef<any>(null);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("connected", socket.id);
+    });
+
+    socket.on("editor-message", (data: string) => {
+      console.log('Received message from server:', data);
+      setEditorValue(data);
+    });
+
+    return () => {
+      socket.disconnect();
+      socket.off("editor-message");
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    socket.on("chat-message", (msg: { username: string; text: string; }) => {
+      console.log('Received chat message:', msg);
+      // You can handle the chat message here or pass it to ChatBox
+    });
+
+    return () => {
+      socket.off("chat-message");
+    };
+  }, [socket]);
+
+  const handleEditorDidMount = (editor: any) => {
+    editorRef.current = editor;
+    const statusNode = document.createElement('div');
+    document.body.appendChild(statusNode);
+    vimModeRef.current = initVimMode(editor, statusNode);
+  };
 
   const handleEditorChange = (value: string | undefined) => {
     if (value) {
@@ -56,6 +100,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewFileName(e.target.value);
+  }
+
   const handleAddFile = () => {
     if (newFileName.trim()) {
       const fileExtension = newFileName.split('.').pop() || '';
@@ -72,14 +120,14 @@ const App: React.FC = () => {
       setEditorValue("");
       setNewFileName("");
     }
-  };
+  }
 
   const handleFileChange = (name: string) => {
     if (files[name]) {
       setFileName(name);
       setEditorValue(files[name].value);
     }
-  };
+  }
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
@@ -104,7 +152,7 @@ const App: React.FC = () => {
             type='text'
             placeholder='Enter file name'
             value={newFileName}
-            onChange={(e) => setNewFileName(e.target.value)}
+            onChange={handleInputChange}
           />
           <button onClick={handleAddFile}>Add File</button>
         </div>
@@ -119,6 +167,7 @@ const App: React.FC = () => {
             path={fileName}
             theme="vs-dark"
             onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
           />
         ) : (
           <p className="placeholder">No file selected. Please create or select a file.</p>
@@ -133,10 +182,10 @@ const App: React.FC = () => {
       <button className="chat-toggle-btn" onClick={toggleChat}>
         {isChatOpen ? 'Close Chat' : 'Open Chat'}
       </button>
-      {isChatOpen && <ChatBox onClose={closeChat} />}
+      {isChatOpen && <ChatBox onClose={closeChat} socket={socket} />}
     </div>
   );
-};
+}
 
 export default App;
 
