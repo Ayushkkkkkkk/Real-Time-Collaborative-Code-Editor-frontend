@@ -1,8 +1,9 @@
 import Editor from '@monaco-editor/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import './App.css';
 import { io } from 'socket.io-client';
 import { initVimMode } from 'monaco-vim';
+import ChatBox from './container/Chatbox/ChatBox';
+import './App.css';
 
 interface File {
   name: string;
@@ -24,6 +25,7 @@ function App() {
   const [editorValue, setEditorValue] = useState<string>("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [output, setOutput] = useState<string>("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
 
@@ -89,7 +91,7 @@ function App() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewFileName(e.target.value);
-  }
+  };
 
   const handleAddFile = () => {
     if (newFileName.trim()) {
@@ -107,14 +109,18 @@ function App() {
       setEditorValue("");
       setNewFileName("");
     }
-  }
+  };
 
   const handleFileChange = (name: string) => {
     if (files[name]) {
       setFileName(name);
       setEditorValue(files[name].value);
     }
-  }
+  };
+
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen);
+  };
 
   return (
     <div className="app">
@@ -158,6 +164,10 @@ function App() {
           <pre className="output">{output}</pre>
         </div>
       )}
+      {isChatOpen && <ChatBox />}
+      <button className="chat-toggle-btn" onClick={toggleChat}>
+        {isChatOpen ? 'Close Chat' : 'Open Chat'}
+      </button>
     </div>
   );
 }
