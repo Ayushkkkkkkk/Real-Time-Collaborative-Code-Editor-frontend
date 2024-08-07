@@ -10,10 +10,12 @@ interface ChatBoxProps {
 const ChatBox: React.FC<ChatBoxProps> = ({ onClose, socket }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ text: string; type: 'sender' | 'receiver' }[]>([]);
+  const [userId] = useState(() => socket.id); // Store the user ID on the client
 
   const handleClick = () => {
     if (message.trim()) {
-      socket.emit('chat-message', message);
+      const data = { text: message, senderId: userId };
+      socket.emit('chat-message', data);
       setMessages((prevMessages) => [
         ...prevMessages,
         { text: message, type: 'sender' }
@@ -28,17 +30,21 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onClose, socket }) => {
   };
 
   useEffect(() => {
-    socket.on('chat-message', (msg: string) => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { text: msg, type: 'receiver' }
-      ]);
-    });
+    const handleIncomingMessage = (data: { text: string; senderId: string }) => {
+      if (data.senderId !== userId) { // Check if the message is not from the current user
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: data.text, type: 'receiver' }
+        ]);
+      }
+    };
+
+    socket.on('chat-message', handleIncomingMessage);
 
     return () => {
-      socket.off('chat-message');
+      socket.off('chat-message', handleIncomingMessage);
     };
-  }, [socket]);
+  }, [socket, userId]);
 
   return (
     <div className="chatbox-container">
