@@ -48,7 +48,6 @@ function App() {
   useEffect(() => {
     socket.on("chat-message", (msg: { username: string; text: string; }) => {
       console.log('Received chat message:', msg);
-      // You can handle the chat message here or pass it to ChatBox
     });
 
     return () => {

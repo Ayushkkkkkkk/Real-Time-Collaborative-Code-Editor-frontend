@@ -31,7 +31,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onClose, socket }) => {
 
   useEffect(() => {
     const handleIncomingMessage = (data: { text: string; senderId: string }) => {
-      if (data.senderId !== userId) { // Check if the message is not from the current user
+      if (data.senderId !== userId) {
         setMessages((prevMessages) => [
           ...prevMessages,
           { text: data.text, type: 'receiver' }
