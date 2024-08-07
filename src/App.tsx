@@ -1,9 +1,10 @@
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import './App.css';
 import { io } from 'socket.io-client';
 import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
+import './App.css';
+import LoginPage from './container/Login/Login';
 
 interface File {
   name: string;
@@ -12,13 +13,7 @@ interface File {
 }
 
 function App() {
-  const socket = useMemo(
-    () =>
-      io("http://localhost:4000", {
-        withCredentials: true,
-      }),
-    []
-  );
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   const [files, setFiles] = useState<{ [key: string]: File }>({});
   const [newFileName, setNewFileName] = useState("");
@@ -28,6 +23,11 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const editorRef = useRef<any>(null);
   const vimModeRef = useRef<any>(null);
+
+  const socket = useMemo(
+    () => io("http://localhost:4000", { withCredentials: true }),
+    []
+  );
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -101,7 +101,7 @@ function App() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewFileName(e.target.value);
-  }
+  };
 
   const handleAddFile = () => {
     if (newFileName.trim()) {
@@ -119,14 +119,14 @@ function App() {
       setEditorValue("");
       setNewFileName("");
     }
-  }
+  };
 
   const handleFileChange = (name: string) => {
     if (files[name]) {
       setFileName(name);
       setEditorValue(files[name].value);
     }
-  }
+  };
 
   const toggleChat = () => {
     setIsChatOpen(!isChatOpen);
@@ -136,52 +136,62 @@ function App() {
     setIsChatOpen(false);
   };
 
+  const login = () => {
+    setIsLoggedIn(true);
+  };
+
   return (
     <div className="app">
-      <div className="file-interface">
-        {Object.keys(files).length > 0 && fileName && (
-          <select onChange={(e) => handleFileChange(e.target.value)} value={fileName}>
-            {Object.keys(files).map(file => (
-              <option key={file} value={file}>{file}</option>
-            ))}
-          </select>
-        )}
-        <div className="add-file-container">
-          <input
-            type='text'
-            placeholder='Enter file name'
-            value={newFileName}
-            onChange={handleInputChange}
-          />
-          <button onClick={handleAddFile}>Add File</button>
-        </div>
-      </div>
-      <div className="editor-container">
-        {fileName ? (
-          <Editor
-            height="calc(100vh - 150px)"
-            width="100%"
-            language={files[fileName]?.language || 'plaintext'}
-            value={editorValue}
-            path={fileName}
-            theme="vs-dark"
-            onChange={handleEditorChange}
-            onMount={handleEditorDidMount}
-          />
-        ) : (
-          <p className="placeholder">No file selected. Please create or select a file.</p>
-        )}
-      </div>
-      {fileName && (
-        <div className="output-container">
-          <button onClick={handleRunCode}>Run</button>
-          <pre className="output">{output}</pre>
-        </div>
+      {!isLoggedIn ? (
+        <LoginPage onLogin={login} />
+      ) : (
+        <>
+          <div className="file-interface">
+            {Object.keys(files).length > 0 && fileName && (
+              <select onChange={(e) => handleFileChange(e.target.value)} value={fileName}>
+                {Object.keys(files).map(file => (
+                  <option key={file} value={file}>{file}</option>
+                ))}
+              </select>
+            )}
+            <div className="add-file-container">
+              <input
+                type='text'
+                placeholder='Enter file name'
+                value={newFileName}
+                onChange={handleInputChange}
+              />
+              <button onClick={handleAddFile}>Add File</button>
+            </div>
+          </div>
+          <div className="editor-container">
+            {fileName ? (
+              <Editor
+                height="calc(100vh - 150px)"
+                width="100%"
+                language={files[fileName]?.language || 'plaintext'}
+                value={editorValue}
+                path={fileName}
+                theme="vs-dark"
+                onChange={handleEditorChange}
+                onMount={handleEditorDidMount}
+              />
+            ) : (
+              <p className="placeholder">No file selected. Please create or select a file.</p>
+            )}
+          </div>
+          {fileName && (
+            <div className="output-container">
+              <button onClick={handleRunCode}>Run</button>
+              <pre className="output">{output}</pre>
+            </div>
+          )}
+          <button className="chat-toggle-btn" onClick={toggleChat}>
+            {isChatOpen ? 'Close Chat' : 'Open Chat'}
+          </button>
+          {isChatOpen && <ChatBox onClose={closeChat} socket={socket} />}
+        </>
       )}
-      <button className="chat-toggle-btn" onClick={toggleChat}>
-        {isChatOpen ? 'Close Chat' : 'Open Chat'}
-      </button>
-      {isChatOpen && <ChatBox onClose={closeChat} socket={socket} />}
     </div>
   );
 }
