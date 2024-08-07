@@ -10,7 +10,7 @@ interface ChatBoxProps {
 const ChatBox: React.FC<ChatBoxProps> = ({ onClose, socket }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ text: string; type: 'sender' | 'receiver' }[]>([]);
-  const [userId] = useState(() => socket.id); // Store the user ID on the client
+  const [userId] = useState(() => socket.id);
 
   const handleClick = () => {
     if (message.trim()) {
