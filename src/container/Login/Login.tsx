@@ -64,11 +64,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // Add your login validation logic here
-        // if valid:
         onLogin();
-        // else:
-        // setError("Invalid credentials");
     };
 
     return (
