@@ -1,16 +1,9 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-
 
 interface LoginPageProps {
     onLogin: () => void;
-}
-
-interface response {
-    name: string,
-    email: string,
-    password: string,
 }
 
 const Container = styled.div`
@@ -65,7 +58,6 @@ const ErrorText = styled.p`
   font-size: 0.875rem;
 `;
 
-
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -73,34 +65,30 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const [responseName, setResponseName] = useState<string>();
     const [responseEmail, setResponseEmail] = useState<string>();
     const [responsePassword, setResponsePassword] = useState<string>();
-    const getInfo = () => {
-        if (email) {
-            axios.get(`http://localhost:4000/api/v1/user/${email}`).then(response => {
-                const info = response.data.user;
-                setResponseName(info.name);
-                setResponseEmail(info.email)
-                setResponsePassword(info.password);
-            }).catch((error) => {
-                console.log(error);
-            })
+
+    const getInfo = async (email: string) => {
+        try {
+            if (email) {
+                const response = await axios.get(`http://localhost:4000/api/v1/user/${email}`);
+                return response.data.user;
+            }
+        } catch (error) {
+            console.log(error);
         }
-    }
+    };
 
-    useEffect(() => {
-        getInfo();
-    }, [])
-
-
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (email == responseEmail && password == password) {
+        const information = await getInfo(email); // Wait for getInfo to finish before continuing
+
+        if (email === information.email && password === information.password) {
             onLogin();
-        }
-        else {
+        } else {
             console.log(email);
             console.log(password);
-            console.log(" this is response" + responseEmail);
-            console.log("wrong password");
+            console.log("This is response: " + responseEmail);
+            console.log("Wrong password");
+            setError('Incorrect email or password');
         }
     };
 
@@ -118,6 +106,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             required
                         />
                     </div>
+
                     <div>
                         <Input
                             type="password"
