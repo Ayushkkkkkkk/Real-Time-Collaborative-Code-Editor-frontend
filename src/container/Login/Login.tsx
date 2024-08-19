@@ -1,8 +1,16 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
+
 interface LoginPageProps {
     onLogin: () => void;
+}
+
+interface response {
+    name: string,
+    email: string,
+    password: string,
 }
 
 const Container = styled.div`
@@ -57,14 +65,38 @@ const ErrorText = styled.p`
   font-size: 0.875rem;
 `;
 
+
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [responseName, setResponseName] = useState<string>();
+    const [responseEmail, setResponseEmail] = useState<string>();
+    const [responsePassword, setResponsePassword] = useState<string>();
+    const getInfo = () => {
+        if (email) {
+            axios.get(`http://localhost:4000/api/v1/user/${email}`).then(response => {
+                const info = response.data.user;
+                setResponseName(info.name);
+                setResponseEmail(info.email)
+                setResponsePassword(info.password);
+
+            }).catch((error) => {
+                console.log(error);
+            })
+        }
+    }
+
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        onLogin();
+        getInfo();
+        if (email == responseEmail && password == password) {
+            onLogin();
+        }
+        else {
+            console.log("wrong password");
+        }
     };
 
     return (

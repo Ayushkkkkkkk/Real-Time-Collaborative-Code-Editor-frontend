@@ -5,7 +5,6 @@ import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
 import './App.css';
 import LoginPage from './container/Login/Login';
-import TerminalComponent from './container/Terminal/Terminal';
 
 
 
