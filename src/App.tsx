@@ -75,33 +75,19 @@ function App() {
     }
   };
 
-  const handleRunCode = async () => {
+
+  const compileAndRunCode = async () => {
+    const code = editorValue;
     try {
-      const response = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': '947263138emsh6395daaef83aab5p1d2114jsn5fe463414cf3',
-        },
-        body: JSON.stringify({
-          source_code: editorValue,
-          language_id: 63,
-          stdin: "",
-          expected_output: "",
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      setOutput(result.stdout || result.stderr || "No output");
-    } catch (error) {
-      console.error("Error:", error);
-      setOutput("An error occurred while executing the code.");
+      const result = eval(code);
+      console.log(result);
+      setOutput(result);
     }
-  };
+    catch (error) {
+      console.log(error);
+    }
+  }
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewFileName(e.target.value);
@@ -186,7 +172,7 @@ function App() {
           </div>
           {fileName && (
             <div className="output-container">
-              <button onClick={handleRunCode}>Run</button>
+              <button onClick={compileAndRunCode}>Run</button>
               <pre className="output">{output}</pre>
             </div>
           )}
