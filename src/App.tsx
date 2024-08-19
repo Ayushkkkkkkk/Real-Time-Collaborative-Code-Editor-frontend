@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { io } from 'socket.io-client';
@@ -5,10 +6,7 @@ import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
 import './App.css';
 import LoginPage from './container/Login/Login';
-
-
-
-
+import OutputFloat from './container/OutputFloat/OutputFloat';
 
 interface File {
   name: string;
@@ -18,7 +16,7 @@ interface File {
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
+  const [isOutputVisible, setIsOutputVisible] = useState<boolean>(false);
   const [files, setFiles] = useState<{ [key: string]: File }>({});
   const [newFileName, setNewFileName] = useState("");
   const [editorValue, setEditorValue] = useState<string>("");
@@ -75,19 +73,40 @@ function App() {
     }
   };
 
-
-  const compileAndRunCode = async () => {
+  const compileAndRunCode = () => {
     const code = editorValue;
+
+    // Backup the original console.log
+    const originalLog = console.log;
+    let output = '';
+
     try {
-      const result = eval(code);
-      console.log(result);
-      setOutput(result);
+      // Redirect console.log to capture output
+      console.log = (message: any) => {
+        output += message + '\n';
+      };
+
+      // Evaluate the code
+      eval(code);
+
+      // Restore the original console.log
+      console.log = originalLog;
+
+      // Set the captured output to the state
+      setOutput(output || 'No output');
     }
     catch (error) {
-      console.log(error);
+      console.error("this is the error from this " + error);
+      setOutput(`Error: ${error.message}`);
     }
-  }
+    finally {
+      setIsOutputVisible(true);
+    }
+  };
 
+  const closeOutputFloat = () => {
+    setIsOutputVisible(false); // Hide the output float
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewFileName(e.target.value);
@@ -173,9 +192,9 @@ function App() {
           {fileName && (
             <div className="output-container">
               <button onClick={compileAndRunCode}>Run</button>
-              <pre className="output">{output}</pre>
             </div>
           )}
+          {isOutputVisible && <OutputFloat output={output} onClose={closeOutputFloat} />}
           <button className="chat-toggle-btn" onClick={toggleChat}>
             {isChatOpen ? 'Close Chat' : 'Open Chat'}
           </button>
