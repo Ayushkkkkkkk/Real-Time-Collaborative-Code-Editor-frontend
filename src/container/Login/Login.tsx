@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 
@@ -80,21 +80,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 setResponseName(info.name);
                 setResponseEmail(info.email)
                 setResponsePassword(info.password);
-
             }).catch((error) => {
                 console.log(error);
             })
         }
     }
 
+    useEffect(() => {
+        getInfo();
+    }, [])
+
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        getInfo();
         if (email == responseEmail && password == password) {
             onLogin();
         }
         else {
+            console.log(email);
+            console.log(password);
+            console.log(" this is response" + responseEmail);
             console.log("wrong password");
         }
     };
