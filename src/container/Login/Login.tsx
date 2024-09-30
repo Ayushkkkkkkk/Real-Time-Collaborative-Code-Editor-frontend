@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
@@ -61,10 +62,34 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [responseName, setResponseName] = useState<string>();
+    const [responseEmail, setResponseEmail] = useState<string>();
+    const [responsePassword, setResponsePassword] = useState<string>();
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const getInfo = async (email: string) => {
+        try {
+            if (email) {
+                const response = await axios.get(`http://localhost:4000/api/v1/user/${email}`);
+                return response.data.user;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        onLogin();
+        const information = await getInfo(email); // Wait for getInfo to finish before continuing
+
+        if (email === information.email && password === information.password) {
+            onLogin();
+        } else {
+            console.log(email);
+            console.log(password);
+            console.log("This is response: " + responseEmail);
+            console.log("Wrong password");
+            setError('Incorrect email or password');
+        }
     };
 
     return (
@@ -81,6 +106,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                             required
                         />
                     </div>
+
                     <div>
                         <Input
                             type="password"

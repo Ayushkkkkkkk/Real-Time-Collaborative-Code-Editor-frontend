@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
+    "axios": "^1.7.4",
     "monaco-editor": "^0.50.0",
     "monaco-vim": "^0.4.1",
     "react": "^18.3.1",

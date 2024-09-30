@@ -76,20 +76,16 @@ function App() {
   const compileAndRunCode = () => {
     const code = editorValue;
 
-    // Backup the original console.log
     const originalLog = console.log;
     let output = '';
 
     try {
-      // Redirect console.log to capture output
       console.log = (message: any) => {
         output += message + '\n';
       };
 
-      // Evaluate the code
       eval(code);
 
-      // Restore the original console.log
       console.log = originalLog;
 
       // Set the captured output to the state
