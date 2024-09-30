@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import { io } from 'socket.io-client';
@@ -5,11 +6,7 @@ import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
 import './App.css';
 import LoginPage from './container/Login/Login';
-import TerminalComponent from './container/Terminal/Terminal';
-
-
-
-
+import OutputFloat from './container/outputFloat/outputFloat';
 
 interface File {
   name: string;
@@ -19,7 +16,7 @@ interface File {
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-
+  const [isOutputVisible, setIsOutputVisible] = useState<boolean>(false);
   const [files, setFiles] = useState<{ [key: string]: File }>({});
   const [newFileName, setNewFileName] = useState("");
   const [editorValue, setEditorValue] = useState<string>("");
@@ -76,32 +73,39 @@ function App() {
     }
   };
 
-  const handleRunCode = async () => {
+  const compileAndRunCode = () => {
+    const code = editorValue;
+
+    // Backup the original console.log
+    const originalLog = console.log;
+    let output = '';
+
     try {
-      const response = await fetch('https://ce.judge0.com/submissions?base64_encoded=false&wait=true', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': '947263138emsh6395daaef83aab5p1d2114jsn5fe463414cf3',
-        },
-        body: JSON.stringify({
-          source_code: editorValue,
-          language_id: 63,
-          stdin: "",
-          expected_output: "",
-        }),
-      });
+      // Redirect console.log to capture output
+      console.log = (message: any) => {
+        output += message + '\n';
+      };
 
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
-      }
+      // Evaluate the code
+      eval(code);
 
-      const result = await response.json();
-      setOutput(result.stdout || result.stderr || "No output");
-    } catch (error) {
-      console.error("Error:", error);
-      setOutput("An error occurred while executing the code.");
+      // Restore the original console.log
+      console.log = originalLog;
+
+      // Set the captured output to the state
+      setOutput(output || 'No output');
     }
+    catch (error) {
+      console.error("this is the error from this " + error);
+      setOutput(`Error: ${error.message}`);
+    }
+    finally {
+      setIsOutputVisible(true);
+    }
+  };
+
+  const closeOutputFloat = () => {
+    setIsOutputVisible(false); // Hide the output float
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,10 +191,10 @@ function App() {
           </div>
           {fileName && (
             <div className="output-container">
-              <button onClick={handleRunCode}>Run</button>
-              <pre className="output">{output}</pre>
+              <button onClick={compileAndRunCode}>Run</button>
             </div>
           )}
+          {isOutputVisible && <OutputFloat output={output} onClose={closeOutputFloat} />}
           <button className="chat-toggle-btn" onClick={toggleChat}>
             {isChatOpen ? 'Close Chat' : 'Open Chat'}
           </button>
