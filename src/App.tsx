@@ -6,7 +6,8 @@ import { initVimMode } from 'monaco-vim';
 import ChatBox from './container/Chatbox/ChatBox';
 import './App.css';
 import LoginPage from './container/Login/Login';
-import OutputFloat from './container/outputFloat/outputFloat';
+import OutputFloat from './container/OutputFloat/outputFloat';
+
 
 interface File {
   name: string;

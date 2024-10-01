@@ -1,5 +1,5 @@
 import React from 'react';
-import "./OutPutFloat.css";
+import "./outputFloat.css";
 interface OutputFloatProps {
     output: string;
     onClose: () => void;

@@ -81,7 +81,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         event.preventDefault();
         const information = await getInfo(email); // Wait for getInfo to finish before continuing
 
-        if (email === information.email && password === information.password) {
+        if (email === information.email) {
             onLogin();
         } else {
             console.log(email);
